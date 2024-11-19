@@ -1,4 +1,3 @@
-// src/components/prompts/PromptList.tsx
 import React from 'react';
 import { 
   Table, 
@@ -11,7 +10,7 @@ import {
   IconButton,
   Button
 } from '@mui/material';
-import { Edit, Delete, PlayArrow } from '@mui/icons-material';
+import { Edit, Delete, PlayArrow, AccountTree } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { promptsApi } from '../../api/apiClient';
 import { useNavigate } from 'react-router-dom';
@@ -26,8 +25,8 @@ export const PromptList = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id, version }: { id: string, version: string }) => 
-      promptsApi.deletePrompt(id, version),
+    mutationFn: ({ name, version }: { name: string, version: string }) => 
+      promptsApi.deletePrompt(name, version),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prompts'] });
     }
@@ -57,28 +56,33 @@ export const PromptList = () => {
           </TableHead>
           <TableBody>
             {prompts?.map((prompt: any) => (
-              <TableRow key={`${prompt.id}-${prompt.version}`}>
+              <TableRow key={`${prompt.name}-${prompt.version}`}>
                 <TableCell>{prompt.name}</TableCell>
                 <TableCell>{prompt.version}</TableCell>
                 <TableCell>{prompt.staticTags.join(', ')}</TableCell>
                 <TableCell>
                   <IconButton 
-                    onClick={() => navigate(`/prompts/${prompt.id}/${prompt.version}`)}
+                    onClick={() => navigate(`/prompts/${prompt.name}/${prompt.version}`)}
                   >
                     <Edit />
                   </IconButton>
                   <IconButton 
-                    onClick={() => navigate(`/prompts/${prompt.id}/${prompt.version}/execute`)}
+                    onClick={() => navigate(`/prompts/${prompt.name}/${prompt.version}/execute`)}
                   >
                     <PlayArrow />
                   </IconButton>
                   <IconButton 
                     onClick={() => deleteMutation.mutate({
-                      id: prompt.id,
+                      name: prompt.name,
                       version: prompt.version
                     })}
                   >
                     <Delete />
+                  </IconButton>
+                  <IconButton 
+                    onClick={() => navigate(`/structure-editor/${prompt.name}/${prompt.version}`)}
+                  >
+                    <AccountTree />
                   </IconButton>
                 </TableCell>
               </TableRow>

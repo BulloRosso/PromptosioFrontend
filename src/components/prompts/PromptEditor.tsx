@@ -60,7 +60,8 @@ export const PromptEditor = () => {
   const { id, version } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
+  const isEditMode = !!id && !!version;
+  
   const { control, handleSubmit, reset, setValue, watch } = useForm<PromptFormData>({
     defaultValues: {
       name: '',
@@ -92,6 +93,36 @@ export const PromptEditor = () => {
     enabled: !!id && !!version,
   });
 
+  const incrementVersion = (currentVersion: string): string => {
+    const [major, minor] = currentVersion.split('.').map(Number);
+    if (minor === 9) {
+      return `${major + 1}.0`;
+    }
+    return `${major}.${minor + 1}`;
+  };
+
+  // Mutation for creating new version
+  const createVersionMutation = useMutation({
+    mutationFn: (data: PromptFormData) => {
+      const newVersionData = {
+        ...data,
+        version: incrementVersion(data.version)
+      };
+      return promptsApi.createPrompt(newVersionData);
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['prompts'] });
+      // Navigate to the new version
+      navigate(`/prompts/${response.name}/${response.version}`);
+    },
+  });
+
+  const handleCreateNewVersion = () => {
+    // Get current form data
+    const currentData = watch();
+    createVersionMutation.mutate(currentData);
+  };
+  
   // Update form when data is fetched
   useEffect(() => {
     if (promptData) {
@@ -126,7 +157,7 @@ export const PromptEditor = () => {
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>
-        {id ? 'Edit Prompt' : 'Create New Prompt'}
+        {isEditMode ? 'Edit Prompt' : 'Create New Prompt'}
       </Typography>
 
       <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
@@ -144,6 +175,15 @@ export const PromptEditor = () => {
                   label="Name"
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
+                  InputProps={{
+                    readOnly: isEditMode,
+                    sx: isEditMode ? {
+                      bgcolor: 'action.hover',
+                      '& .MuiInputBase-input': {
+                        color: 'text.secondary',
+                      }
+                    } : {}
+                  }}
                 />
               )}
             />
@@ -161,6 +201,15 @@ export const PromptEditor = () => {
                   label="Version"
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
+                  InputProps={{
+                    readOnly: isEditMode,
+                    sx: isEditMode ? {
+                      bgcolor: 'action.hover',
+                      '& .MuiInputBase-input': {
+                        color: 'text.secondary',
+                      }
+                    } : {}
+                  }}
                 />
               )}
             />
@@ -334,20 +383,42 @@ export const PromptEditor = () => {
 
           {/* Submit Buttons */}
           <Grid item xs={12}>
-            <Box display="flex" gap={2} justifyContent="flex-end">
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/')}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                type="submit"
-                disabled={mutation.isPending}
-              >
-                {id ? 'Update' : 'Create'} Prompt
-              </Button>
+            <Box 
+              display="flex" 
+              justifyContent="space-between" 
+              alignItems="center"
+            >
+              {/* New Version Button - Left Side */}
+              <Box>
+                {isEditMode && (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleCreateNewVersion}
+                    disabled={createVersionMutation.isPending}
+                    startIcon={<AddIcon />}
+                  >
+                    Create New Version
+                  </Button>
+                )}
+              </Box>
+
+              {/* Existing Buttons - Right Side */}
+              <Box display="flex" gap={2}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/')}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  type="submit"
+                  disabled={mutation.isPending}
+                >
+                  {isEditMode ? 'Update' : 'Create'} Prompt
+                </Button>
+              </Box>
             </Box>
           </Grid>
         </Grid>

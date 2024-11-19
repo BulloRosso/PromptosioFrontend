@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { 
+  Box,
   ThemeProvider, 
   CssBaseline, 
   createTheme 
@@ -10,6 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PromptList } from './components/prompts/PromptList';
 import { PromptEditor } from './components/prompts/PromptEditor';
 import { Header } from './components/layout/Header';
+import StructureEditor from './components/structure/StructureEditor';
 
 const theme = createTheme({
   palette: {
@@ -24,17 +26,31 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+          >
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100vh', // Full viewport height
+            overflow: 'hidden' // Prevent scrolling
+          }}>
             <Header />
-            <main style={{ flex: 1, padding: '20px' }}>
+            <Box sx={{ 
+              flex: 1,  // Take remaining space
+              overflow: 'hidden' // Prevent scrolling
+            }}>
               <Routes>
                 <Route path="/" element={<PromptList />} />
+                <Route path="/structure-editor/:name/:version" element={<StructureEditor />} />
                 <Route path="/prompts/new" element={<PromptEditor />} />
                 <Route path="/prompts/:id/:version" element={<PromptEditor />} />
               </Routes>
-            </main>
-          </div>
+            </Box>
+          </Box>
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
